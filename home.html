@@ -139,15 +139,7 @@
         }
 
         function copyShareUrl() {
-            const currentUrl = window.location.href;
-            const dummy = document.createElement('textarea');
-            document.body.appendChild(dummy);
-            dummy.value = currentUrl;
-            dummy.select();
-            document.execCommand('copy');
-            document.body.removeChild(dummy);
-
-            showToast('Current parameter URL copied to clipboard!');
+         
         }
 
         function showToast(message) {
