@@ -46,11 +46,6 @@
             </div>
         </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 z-50 text-sm font-medium">
-        <i class="fa-solid fa-check"></i>
-        <span id="toast-message">Link copied to clipboard!</span>
-    </div>
 
     <script>
         function initApp() {
@@ -138,19 +133,6 @@
             }
         }
 
-        function copyShareUrl() {
-         
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toast-message');
-            msgEl.textContent = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
 
         window.onload = initApp;
     </script>
