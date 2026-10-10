@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic URL Video Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col justify-center items-start p-4 selection:bg-indigo-500 selection:text-white">
+
+    <div class="w-full max-w-4xl mx-auto space-y-4">
+        <!-- Video Player Card -->
+        <div class="bg-dark-card border border-dark-border rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="relative w-full aspect-video bg-black flex items-center justify-center">
+                <div id="player-container" class="w-full h-full">
+                    <!-- Dynamic iframe or video element will be inserted here -->
+                </div>
+            </div>
+            
+            <div class="p-5 border-t border-dark-border bg-dark-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 id="video-title" class="text-xl font-bold tracking-tight">Loading Video...</h2>
+                    <p id="video-desc" class="text-sm text-slate-400 mt-1">Reading URL parameters to initialize player...</p>
+                </div>
+                <div class="flex items-center space-x-3 self-end sm:self-auto">
+                    <button onclick="copyShareUrl()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>Share Link</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 z-50 text-sm font-medium">
+        <i class="fa-solid fa-check"></i>
+        <span id="toast-message">Link copied to clipboard!</span>
+    </div>
+
+    <script>
+        function initApp() {
+            handleUrlChange();
+
+            // Listen for browser navigation (Back/Forward buttons & manual changes)
+            window.addEventListener('popstate', () => {
+                handleUrlChange();
+            });
+        }
+
+        function handleUrlChange() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoParam = urlParams.get('v');
+
+            let activeVideo = null;
+
+            if (videoParam) {
+                if (videoParam.startsWith('http://') || videoParam.startsWith('https://')) {
+                    activeVideo = {
+                        id: videoParam,
+                        url: videoParam,
+                        title: 'Custom Direct Video Stream',
+                        desc: 'Loaded dynamically from custom URL parameter string',
+                        type: videoParam.endsWith('.mp4') ? 'mp4' : 'youtube'
+                    };
+                } else {
+                    activeVideo = {
+                        id: videoParam,
+                        title: `YouTube Video (${videoParam})`,
+                        desc: 'Custom YouTube video loaded via URL query string parameter',
+                        type: 'youtube'
+                    };
+                }
+            } else {
+                // Default fallback video if no parameter is provided
+                activeVideo = {
+                    id: 'dQw4w9WgXcQ',
+                    title: 'Rick Astley - Never Gonna Give You Up',
+                    desc: 'Default video loaded because no parameter `?v=` was specified.',
+                    type: 'youtube'
+                };
+                updateUrlParam(activeVideo.id, false);
+            }
+
+            loadPlayer(activeVideo);
+        }
+
+        function updateUrlParam(value, pushState = true) {
+            const url = new URL(window.location);
+            url.searchParams.set('v', value);
+            if (pushState) {
+                window.history.pushState({}, '', url);
+            } else {
+                window.history.replaceState({}, '', url);
+            }
+            handleUrlChange();
+        }
+
+        function loadPlayer(video) {
+            const container = document.getElementById('player-container');
+            const titleEl = document.getElementById('video-title');
+            const descEl = document.getElementById('video-desc');
+
+            titleEl.textContent = video.title;
+            descEl.textContent = video.desc;
+
+            container.innerHTML = '';
+
+            if (video.type === 'mp4' || (video.url && video.url.endsWith('.mp4'))) {
+                const videoEl = document.createElement('video');
+                videoEl.src = video.url || video.id;
+                videoEl.controls = true;
+                videoEl.autoplay = true;
+                videoEl.className = 'w-full h-full object-contain bg-black';
+                container.appendChild(videoEl);
+            } else {
+                const iframe = document.createElement('iframe');
+                const embedId = video.id || 'dQw4w9WgXcQ';
+                iframe.src = `https://www.youtube.com/embed/${embedId}?autoplay=1&enablejsapi=1`;
+                iframe.className = 'w-full h-full border-0';
+                iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                iframe.allowFullscreen = true;
+                container.appendChild(iframe);
+            }
+        }
+
+        function copyShareUrl() {
+            const currentUrl = window.location.href;
+            const dummy = document.createElement('textarea');
+            document.body.appendChild(dummy);
+            dummy.value = currentUrl;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            showToast('Current parameter URL copied to clipboard!');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            msgEl.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
